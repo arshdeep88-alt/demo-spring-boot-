@@ -16,14 +16,31 @@ public class demoController {
     private demoService demoservice;
 
     @GetMapping
-    public ResponseEntity<List<demoEntity>> getData(){
-        List<demoEntity> data = demoservice.getAll();
-        return new ResponseEntity<>(data, HttpStatus.OK);
+    public List<demoEntity> getData(){
+        return demoservice.getAll();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<demoEntity> getDataById(@PathVariable Integer id){
+        return demoservice.getById(id)
+                .map(data -> new ResponseEntity<>(data, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PostMapping
-    public ResponseEntity<String> saveData(@RequestBody demoEntity demoentity){
-        demoservice.saveAll(demoentity);
-        return new ResponseEntity<>("Pushed",HttpStatus.CREATED);
+    public ResponseEntity<demoEntity> create(@RequestBody demoEntity demoentity){
+        return new ResponseEntity<>(demoservice.saveAll(demoentity),HttpStatus.CREATED);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<demoEntity> update(@PathVariable Integer id, @RequestBody demoEntity demoentity) {
+        return new ResponseEntity<>(demoservice.update(id, demoentity), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+        demoservice.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }
