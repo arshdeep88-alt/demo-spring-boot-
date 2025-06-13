@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo CRUD App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+<div class="max-w-5xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
+    <h1 class="text-3xl font-bold text-blue-600 mb-4">Demo CRUD Operations</h1>
+
+    <!-- Form -->
+    <form id="demoForm" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <input type="number" id="id" placeholder="ID" class="border p-2 rounded" required>
+        <input type="text" id="name" placeholder="Name" class="border p-2 rounded" required>
+        <input type="number" id="age" placeholder="Age" class="border p-2 rounded" required>
+        <input type="text" id="address" placeholder="Address" class="border p-2 rounded" required>
+        <button type="submit" class="md:col-span-4 bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">Submit</button>
+    </form>
+
+    <!-- Alert -->
+    <div id="alert" class="hidden mb-4 p-3 rounded text-white"></div>
+
+    <!-- Data Table -->
+    <div class="overflow-x-auto">
+        <table class="w-full table-auto border-collapse">
+            <thead>
+            <tr class="bg-blue-600 text-white">
+                <th class="p-2">ID</th>
+                <th class="p-2">Name</th>
+                <th class="p-2">Age</th>
+                <th class="p-2">Address</th>
+                <th class="p-2">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="dataBody" class="bg-white"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    const api = 'http://localhost:8080/demo';
+
+    const form = document.getElementById('demoForm');
+    const idField = document.getElementById('id');
+    const nameField = document.getElementById('name');
+    const ageField = document.getElementById('age');
+    const addressField = document.getElementById('address');
+    const dataBody = document.getElementById('dataBody');
+    const alertBox = document.getElementById('alert');
+
+    // Fetch and display all data
+    const loadData = async () => {
+        const res = await fetch(api);
+        const data = await res.json();
+        dataBody.innerHTML = '';
+        data.forEach(d => {
+            dataBody.innerHTML += `
+                <tr class="border-b">
+                    <td class="p-2">${d.id}</td>
+                    <td class="p-2">${d.name}</td>
+                    <td class="p-2">${d.age}</td>
+                    <td class="p-2">${d.address}</td>
+                    <td class="p-2 space-x-2">
+                        <button onclick="editData(${d.id})" class="text-blue-600 hover:underline">Edit</button>
+                        <button onclick="deleteData(${d.id})" class="text-red-600 hover:underline">Delete</button>
+                    </td>
+                </tr>
+            `;
+        });
+    };
+
+    // Show alert
+    const showAlert = (msg, type = 'success') => {
+        alertBox.textContent = msg;
+        alertBox.className = `mb-4 p-3 rounded text-white ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        alertBox.classList.remove('hidden');
+        setTimeout(() => alertBox.classList.add('hidden'), 3000);
+    };
+
+    // Submit form (create or update)
+    form.onsubmit = async e => {
+        e.preventDefault();
+        const id = idField.value;
+        const payload = {
+            id: parseInt(id),
+            name: nameField.value,
+            age: parseInt(ageField.value),
+            address: addressField.value
+        };
+
+        const method = await fetch(`${api}/${id}`).then(res => res.status === 200 ? 'PUT' : 'POST');
+
+        const res = await fetch(method === 'POST' ? api : `${api}/${id}`, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            showAlert(`${method === 'POST' ? 'Created' : 'Updated'} successfully`);
+            form.reset();
+            loadData();
+        } else {
+            showAlert('Failed to save data', 'error');
+        }
+    };
+
+    // Edit data
+    window.editData = async (id) => {
+        const res = await fetch(`${api}/${id}`);
+        const data = await res.json();
+        idField.value = data.id;
+        nameField.value = data.name;
+        ageField.value = data.age;
+        addressField.value = data.address;
+    };
+
+    // Delete data
+    window.deleteData = async (id) => {
+        if (!confirm('Are you sure you want to delete this entry?')) return;
+        const res = await fetch(`${api}/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            showAlert('Deleted successfully');
+            loadData();
+        } else {
+            showAlert('Delete failed', 'error');
+        }
+    };
+
+    // Initial load
+    loadData();
+</script>
+</body>
+</html>
